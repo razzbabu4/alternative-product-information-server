@@ -26,6 +26,16 @@ async function run() {
   try {
     const queryCollections = client.db('alternativeProducts').collection('queries');
 
+    app.get('/queries', async(req, res)=>{
+        // console.log(req.query.userEmail)
+        let query = {};
+            if (req.query?.userEmail) {
+                query = { userEmail: req.query.userEmail }
+            }
+            const result = await queryCollections.find(query).toArray();
+            res.send(result) 
+    })
+
     app.post('/queries', async(req,res)=>{
         const queries = req.body;
         console.log(queries);
