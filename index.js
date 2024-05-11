@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -23,11 +24,14 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    const queryCollections = client.db('alternativeProducts').collection('queries');
 
-
-
-
-
+    app.post('/queries', async(req,res)=>{
+        const queries = req.body;
+        console.log(queries);
+        const result = await queryCollections.insertOne(queries);
+        res.send(result)
+    })
 
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
