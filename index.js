@@ -29,7 +29,7 @@ async function run() {
 
         // crud for recommendation
 
-        app.get('/recommendation', async(req, res)=>{
+        app.get('/recommendation', async (req, res) => {
             let query = {};
             if (req.query?.queryId) {
                 query = { queryId: req.query.queryId }
@@ -38,10 +38,25 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/recommendation', async(req, res)=>{
+        // my recommendation
+        app.get('/myRecommendation/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { recommenderEmail: email };
+            const result = await recommendCollections.find(query).toArray();
+            res.send(result)
+        })
+
+        app.post('/recommendation', async (req, res) => {
             const recommendation = req.body;
             console.log(recommendation);
             const result = await recommendCollections.insertOne(recommendation);
+            res.send(result)
+        })
+
+        app.delete('/deleteComment/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await recommendCollections.deleteOne(query);
             res.send(result)
         })
 
@@ -77,11 +92,11 @@ async function run() {
             const options = { upsert: true };
             const updateDoc = {
                 $set: {
-                    product_name : singleQuery.product_name,
-                    brand_name : singleQuery.brand_name,
-                    product_image : singleQuery.product_image,
-                    query_title : singleQuery.query_title,
-                    boycotting_reason : singleQuery.boycotting_reason
+                    product_name: singleQuery.product_name,
+                    brand_name: singleQuery.brand_name,
+                    product_image: singleQuery.product_image,
+                    query_title: singleQuery.query_title,
+                    boycotting_reason: singleQuery.boycotting_reason
                 }
             }
             const result = await queryCollections.updateOne(filter, updateDoc, options);
