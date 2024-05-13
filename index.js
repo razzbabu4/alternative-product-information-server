@@ -28,7 +28,6 @@ async function run() {
         const recommendCollections = client.db('alternativeProducts').collection('recommendation');
 
         // crud for recommendation
-
         app.get('/recommendation', async (req, res) => {
             let query = {};
             if (req.query?.queryId) {
@@ -42,6 +41,14 @@ async function run() {
         app.get('/myRecommendation/:email', async (req, res) => {
             const email = req.params.email;
             const query = { recommenderEmail: email };
+            const result = await recommendCollections.find(query).toArray();
+            res.send(result)
+        })
+
+        // recommendation for me
+        app.get('/recommendForMe/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { creatorEmail: email };
             const result = await recommendCollections.find(query).toArray();
             res.send(result)
         })
@@ -67,7 +74,7 @@ async function run() {
             if (req.query?.userEmail) {
                 query = { userEmail: req.query.userEmail }
             }
-            const result = await queryCollections.find(query).toArray();
+            const result = await queryCollections.find(query).sort({_id: -1}).toArray();
             res.send(result)
         })
 
