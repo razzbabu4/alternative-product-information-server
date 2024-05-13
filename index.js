@@ -25,7 +25,17 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         const queryCollections = client.db('alternativeProducts').collection('queries');
+        const recommendCollections = client.db('alternativeProducts').collection('recommendation');
 
+        // crud for recommendation
+        app.post('/recommendation', async(req, res)=>{
+            const recommendation = req.body;
+            console.log(recommendation);
+            const result = await recommendCollections.insertOne(recommendation);
+            res.send(result)
+        })
+
+        // crud for queries
         app.get('/queries', async (req, res) => {
             // console.log(req.query.userEmail)
             let query = {};
