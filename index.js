@@ -28,6 +28,16 @@ async function run() {
         const recommendCollections = client.db('alternativeProducts').collection('recommendation');
 
         // crud for recommendation
+
+        app.get('/recommendation', async(req, res)=>{
+            let query = {};
+            if (req.query?.queryId) {
+                query = { queryId: req.query.queryId }
+            }
+            const result = await recommendCollections.find(query).toArray();
+            res.send(result)
+        })
+
         app.post('/recommendation', async(req, res)=>{
             const recommendation = req.body;
             console.log(recommendation);
