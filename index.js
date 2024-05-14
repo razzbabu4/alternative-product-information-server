@@ -1,14 +1,22 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 require('dotenv').config();
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
 
 // middleware 
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:5173'
+    ],
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.szh9b4v.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -22,10 +30,53 @@ const client = new MongoClient(uri, {
     }
 });
 
+// middleware
+
+const verifyToken = async(req, res, next)=>{
+    const token = req.cookies?.token;
+    // console.log('value of token in middleware: ', token)
+    if(!token){
+        return res.status(401).send({message: 'unauthorized access'})
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+        if(err){
+            console.log(err)
+            return res.status(401).send({message:'unauthorized'})
+        }
+        req.user = decoded
+        next()
+    })
+}
+
 async function run() {
     try {
         const queryCollections = client.db('alternativeProducts').collection('queries');
         const recommendCollections = client.db('alternativeProducts').collection('recommendation');
+
+
+        // auth related api
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            // console.log('user login for token', user)
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'none'
+                })
+                .send({ success: true })
+        })
+
+        app.post('/logout', async (req, res) => {
+            const user = req.body;
+            // console.log('logout user :', user)
+            res
+                .clearCookie('token', { maxAge: 0 })
+                .send({ success: true })
+        })
+
+
 
         // crud for recommendation
         app.get('/recommendation', async (req, res) => {
@@ -68,12 +119,18 @@ async function run() {
         })
 
         // crud for queries
-        app.get('/queries', async (req, res) => {
-            // console.log(req.query.userEmail)
-            let query = {};
-            if (req.query?.userEmail) {
-                query = { userEmail: req.query.userEmail }
+        app.get('/queries', async(req,res)=>{
+            const result = await queryCollections.find().sort({_id: -1}).toArray();
+            res.send(result)
+        })
+        app.get('/myQueries/:email', verifyToken, async (req, res) => {
+            if(req.user.email !== req.params.email){
+                return res.status(403).send({message: 'forbidden'})
             }
+            // console.log(req.user.email)
+            // console.log(req.params.email)
+            const email = req.params.email;
+            const query = { userEmail: email };
             const result = await queryCollections.find(query).sort({_id: -1}).toArray();
             res.send(result)
         })
