@@ -11,7 +11,9 @@ const port = process.env.PORT || 5000;
 // middleware 
 app.use(cors({
     origin: [
-        'http://localhost:5173'
+        'http://localhost:5173',
+        'https://alternative-product-info.web.app',
+        'https://alternative-product-info.firebaseapp.com'
     ],
     credentials: true
 }));
@@ -122,6 +124,15 @@ async function run() {
         app.get('/queries', async(req,res)=>{
             const result = await queryCollections.find().sort({_id: -1}).toArray();
             res.send(result)
+        })
+        // search product
+        app.get('/searchProduct/:productName', async(req,res)=>{
+            const product = req.params.productName;
+            console.log(product)
+            const filter = {product_name: { $regex: product, $options: 'i' }}
+            const result = await queryCollections.find(filter).toArray();
+            res.send(result)
+            console.log(result)
         })
         app.get('/myQueries/:email', verifyToken, async (req, res) => {
             if(req.user.email !== req.params.email){
